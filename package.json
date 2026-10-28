@@ -1,0 +1,45 @@
+{
+  "name": "@aiethos/ethostron-mcp",
+  "version": "0.1.0",
+  "description": "EthosTron MCP Server: Agent-native Generative Engine Optimization (GEO) audits and AI citation remediation",
+  "main": "./dist/index.js",
+  "bin": {
+    "ethostron-mcp": "./dist/index.js"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "geo",
+    "ai-seo",
+    "citation-optimization",
+    "perplexity",
+    "chatgpt",
+    "claude",
+    "ethostron",
+    "aiethos"
+  ],
+  "author": "AI Ethos Engineering <dev@aiethos.ai>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

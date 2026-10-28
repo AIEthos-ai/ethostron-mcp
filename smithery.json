@@ -1,0 +1,17 @@
+{
+  "$schema": "https://smithery.ai/docs/config/schema.json",
+  "name": "@aiethos/ethostron-mcp",
+  "displayName": "EthosTron GEO & Citation Auditor",
+  "description": "Agent-native Generative Engine Optimization (GEO) audits, crawlability checks, and EthosTron Live direct-answer synthesis.",
+  "icon": "https://aiethos.ai/favicon.ico",
+  "repository": "https://github.com/aiethos/ethostron-mcp",
+  "command": "npx",
+  "args": ["-y", "@aiethos/ethostron-mcp"],
+  "env": {
+    "AIETHOS_API_KEY": {
+      "type": "string",
+      "description": "Optional AI Ethos API key for higher scan quotas and authenticated features",
+      "required": false
+    }
+  }
+}
