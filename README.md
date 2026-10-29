@@ -11,9 +11,85 @@ The official **Model Context Protocol (MCP)** server for [AIEthos](https://aieth
 
 ---
 
-## ⚡ Quick Setup
+## ⚡ Multi-Assistant Setup & Configuration
 
-### 1. Claude Desktop
+EthosTron™ Live supports both local MCP (stdio JSON-RPC) for IDE coding assistants and standard OpenAPI Actions for cloud LLM assistants like ChatGPT:
+
+### 1. GitHub Copilot (Visual Studio Code)
+GitHub Copilot natively supports MCP servers directly within VS Code.
+
+Add to your project's `.vscode/mcp.json` (or run Command Palette `Ctrl+Shift+P` / `Cmd+Shift+P` > **Copilot: Manage MCP Servers**):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "ethostron": {
+        "command": "npx",
+        "args": ["-y", "@aiethos/ethostron-mcp"]
+      }
+    }
+  }
+}
+```
+**Copilot Chat Usage:**
+```text
+@ethostron Audit https://example.com for GEO and identify missing schema types
+```
+
+---
+
+### 2. ChatGPT (OpenAI Custom GPTs & Actions)
+For OpenAI ChatGPT (Plus, Team, Enterprise), connect EthosTron Live via **OpenAPI Actions** pointing to the Cloud Run backend without needing a local daemon:
+
+1. Open ChatGPT > **Explore GPTs** > **Create** (or edit an existing Custom GPT).
+2. Go to the **Configure** tab > Scroll down to **Actions** > Click **Create new action**.
+3. Under **Schema**, click **Import from URL** and enter:
+   ```text
+   https://aiethos-backend-978593064341.us-west2.run.app/openapi.json
+   ```
+4. **Authentication:** Leave as `None` (the public developer `/public/mcp/*` endpoints are open & read-only).
+5. **Privacy Policy:** `https://aiethos.ai/privacy`
+6. Save and publish your Custom GPT!
+
+**ChatGPT Usage:**
+```text
+Audit https://stripe.com for GEO and generate a direct answer remediation block.
+```
+
+---
+
+### 3. Google Gemini & Antigravity
+For developers building with Google Gemini models or Google Antigravity:
+
+**Option A — Antigravity & Gemini CLI (`.gemini/config/mcp_config.json`):**
+```json
+{
+  "mcpServers": {
+    "ethostron": {
+      "command": "npx",
+      "args": ["-y", "@aiethos/ethostron-mcp"]
+    }
+  }
+}
+```
+
+**Option B — Google GenAI Python SDK (`google-genai`):**
+```python
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+# Connect to EthosTron Live OpenAPI endpoints directly
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Audit https://example.com using aiethos_geo_quickscan"
+)
+```
+
+---
+
+### 4. Claude Desktop
 Add to your `claude_desktop_config.json`:
 
 ```json
@@ -26,20 +102,23 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
+
 *Config file locations:*
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
+**Claude Usage:** Click the tool hammer icon in Claude Desktop and prompt: *"Audit https://linear.app for GEO"*.
+
 ---
 
-### 2. Cursor / Windsurf
+### 5. Cursor & Windsurf
 In **Settings > Features > MCP Servers**, add a new server:
 - **Name:** `ethostron`
 - **Type:** `command`
 - **Command:** `npx -y @aiethos/ethostron-mcp`
 
-Or add directly to `.cursor/mcp.json`:
+Or add directly to `.cursor/mcp.json` or `.windsurf/mcp.json`:
 ```json
 {
   "mcpServers": {
@@ -53,24 +132,9 @@ Or add directly to `.cursor/mcp.json`:
 
 ---
 
-### 3. Google Antigravity
-Add to `.gemini/config/mcp_config.json`:
+### 6. VS Code Autonomous Agents (Cline / Roo Code / Continue)
+Add to your extension's MCP configuration (e.g. `~/.cline/mcp_settings.json` or Roo Code MCP settings):
 
-```json
-{
-  "mcpServers": {
-    "ethostron": {
-      "command": "node",
-      "args": ["C:/Users/rcunn/ethostron-mcp/dist/index.js"]
-    }
-  }
-}
-```
-
----
-
-### 4. VS Code (Cline / Roo Code / Continue)
-Add to your MCP settings file:
 ```json
 {
   "mcpServers": {
@@ -81,6 +145,7 @@ Add to your MCP settings file:
   }
 }
 ```
+Autonomous coding agents will automatically invoke `aiethos_geo_quickscan` to diagnose missing Schema.org markup or robots directives, and call `aiethos_preview_ethostron_fix` to apply verified drop-in code patches.
 
 ---
 
