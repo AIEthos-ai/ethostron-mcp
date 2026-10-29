@@ -1,0 +1,19 @@
+# Smithery configuration file for EthosTron Live MCP Server
+# https://smithery.ai/docs/config
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      AIETHOS_API_KEY:
+        type: string
+        description: "Optional AI Ethos API key for extended daily quickscans and team features"
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@aiethos/ethostron-mcp'],
+      env: config.AIETHOS_API_KEY ? { AIETHOS_API_KEY: config.AIETHOS_API_KEY } : {}
+    })
+  exampleConfig:
+    AIETHOS_API_KEY: ""
