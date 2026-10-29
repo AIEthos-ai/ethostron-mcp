@@ -1,0 +1,8 @@
+{
+  "$schema": "https://glama.ai/schemas/glama.json",
+  "name": "EthosTron Live",
+  "description": "Agent-native Generative Engine Optimization (GEO) audits, crawler analysis (GPTBot, Perplexity, Claude), and Schema.org direct-answer remediation.",
+  "maintainers": [
+    "rcunningham631"
+  ]
+}
