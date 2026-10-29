@@ -33,6 +33,14 @@
   ],
   "author": "AI Ethos Engineering <dev@aiethos.ai>",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AIEthos-ai/ethostron-mcp.git"
+  },
+  "homepage": "https://aiethos.ai/ethostron-live",
+  "bugs": {
+    "url": "https://github.com/AIEthos-ai/ethostron-mcp/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0",
     "zod": "^3.24.2"

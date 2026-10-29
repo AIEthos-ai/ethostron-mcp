@@ -3,8 +3,8 @@
   "name": "@aiethos/ethostron-mcp",
   "displayName": "EthosTron GEO & Citation Auditor",
   "description": "Agent-native Generative Engine Optimization (GEO) audits, crawlability checks, and EthosTron Live direct-answer synthesis.",
-  "icon": "https://aiethos.ai/favicon.ico",
-  "repository": "https://github.com/aiethos/ethostron-mcp",
+  "icon": "https://aiethos.ai/aiethos-image-logo.png",
+  "repository": "https://github.com/AIEthos-ai/ethostron-mcp",
   "command": "npx",
   "args": ["-y", "@aiethos/ethostron-mcp"],
   "env": {
