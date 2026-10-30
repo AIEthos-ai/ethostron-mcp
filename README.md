@@ -39,16 +39,28 @@ Add to your project's `.vscode/mcp.json` (or run Command Palette `Ctrl+Shift+P` 
 
 ---
 
-### 2. ChatGPT (OpenAI Custom GPTs & Actions)
-For OpenAI ChatGPT (Plus, Team, Enterprise), connect EthosTron Live via **OpenAPI Actions** pointing to the Cloud Run backend without needing a local daemon:
+### 2. ChatGPT (OpenAI Custom MCP Connectors & Actions)
+EthosTron Live supports both **native Remote MCP connections** (Server-Sent Events / Streamable HTTP) and **OpenAPI Actions**:
 
+#### Option A — Native Remote MCP Connection (ChatGPT Pro Developer Mode, Team & Enterprise):
+In ChatGPT, add a custom MCP server:
+- **Transport Type:** Server-Sent Events (SSE) / Streamable HTTP
+- **First-Party Server URL:**
+  ```text
+  https://aiethos-backend-978593064341.us-west2.run.app/public/mcp/sse
+  ```
+  *(Or Streamable HTTP endpoint: `https://aiethos-backend-978593064341.us-west2.run.app/public/mcp`)*
+- **Glama Hosted Gateway:** Connect directly via [Glama MCP Directory](https://glama.ai/mcp/servers/AIEthos-ai/ethostron-mcp)
+- **Authentication:** `None` (The public developer endpoints are 100% read-only and unauthenticated)
+
+#### Option B — OpenAPI Actions (Custom GPTs & Assistants):
 1. Open ChatGPT > **Explore GPTs** > **Create** (or edit an existing Custom GPT).
 2. Go to the **Configure** tab > Scroll down to **Actions** > Click **Create new action**.
 3. Under **Schema**, click **Import from URL** and enter:
    ```text
    https://aiethos-backend-978593064341.us-west2.run.app/openapi.json
    ```
-4. **Authentication:** Leave as `None` (the public developer `/public/mcp/*` endpoints are open & read-only).
+4. **Authentication:** Leave as `None`.
 5. **Privacy Policy:** `https://aiethos.ai/privacy`
 6. Save and publish your Custom GPT!
 
