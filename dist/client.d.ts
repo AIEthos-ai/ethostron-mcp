@@ -26,6 +26,18 @@ export interface GeoQuickscanResult {
     criticalGaps: string[];
     claimUrl: string;
 }
+export interface QualityEvaluation {
+    overallQualityScore: number;
+    remediationAction: "add_foundational_block" | "improve_existing_answer" | "no_change_needed";
+    existingAnswerDetected: boolean;
+    factualRelevance: number;
+    brandAlignment: number;
+    queryAlignment: number;
+    extractabilityScore: number;
+    keywordStuffingRisk: number;
+    schemaSelectionAccuracy: number;
+    remediationRationale: string;
+}
 export interface PreviewFixResult {
     topic: string;
     targetUrl: string;
@@ -37,6 +49,7 @@ export interface PreviewFixResult {
     pageType?: string;
     extractedBrand?: string;
     schemaSnippet?: string;
+    qualityEvaluation?: QualityEvaluation;
 }
 export interface CitationCheckResult {
     brandName: string;

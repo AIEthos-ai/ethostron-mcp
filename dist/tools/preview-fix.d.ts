@@ -11,11 +11,11 @@ export declare const PreviewFixInputSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     url: string;
     gap_topic: string;
-    intent_category?: "definitive_architecture" | "comparative_benchmark" | "framework_methodology" | "pricing_commercial" | "solution_overview" | undefined;
+    intent_category?: "definitive_architecture" | "solution_overview" | "comparative_benchmark" | "framework_methodology" | "pricing_commercial" | undefined;
 }, {
     url: string;
     gap_topic: string;
-    intent_category?: "definitive_architecture" | "comparative_benchmark" | "framework_methodology" | "pricing_commercial" | "solution_overview" | undefined;
+    intent_category?: "definitive_architecture" | "solution_overview" | "comparative_benchmark" | "framework_methodology" | "pricing_commercial" | undefined;
 }>;
 export type PreviewFixInput = z.infer<typeof PreviewFixInputSchema>;
 export declare function handlePreviewFix(input: PreviewFixInput, client: EthosTronClient): Promise<{
