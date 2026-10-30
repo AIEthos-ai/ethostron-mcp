@@ -4,5 +4,13 @@
   "description": "Agent-native Generative Engine Optimization (GEO) audits, crawler analysis (GPTBot, Perplexity, Claude), and Schema.org direct-answer remediation.",
   "maintainers": [
     "robertcunningham-crypto"
+  ],
+  "buildSteps": [
+    "pnpm install --frozen-lockfile",
+    "pnpm run build"
+  ],
+  "cmdArguments": [
+    "node",
+    "dist/index.js"
   ]
 }
