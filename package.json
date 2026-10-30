@@ -1,6 +1,6 @@
 {
   "name": "@aiethos/ethostron-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "EthosTron MCP Server: Agent-native Generative Engine Optimization (GEO) audits and AI citation remediation",
   "main": "./dist/index.js",
   "bin": {
