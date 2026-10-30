@@ -325,7 +325,7 @@ export class EthosTronClient {
       `**Target Asset:** \`${url}\` (Detected Page Role: \`${pageRole.charAt(0).toUpperCase() + pageRole.slice(1)}\`)`,
       `**Remediation Action:** \`${actionLabel}\``,
       "",
-      `#### Proposed Direct-Answer Lead (Optimal 50–55 Words for LLM Retrieval):`,
+      `#### Inverted Pyramid Lead (Optimal 50–55 Words for LLM Retrieval):`,
       `"${lead}"`,
       "",
       `#### Automated Answer Quality Score: ${quality.overallQualityScore}/100 (Optimal)`,
