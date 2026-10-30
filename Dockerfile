@@ -1,32 +1,14 @@
-# Multi-stage Dockerfile for EthosTron Live MCP Server
-# Compatible with Glama.ai, Smithery.ai, and container runtimes
+FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive \
+    GLAMA_VERSION="1.0.0"
 
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-COPY package.json pnpm-lock.yaml tsconfig.json ./
-COPY src/ ./src/
-
-RUN pnpm install --frozen-lockfile
-RUN pnpm run build
-
-FROM node:20-alpine AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    npm install -g mcp-proxy@6.7.16 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN npm install @aiethos/ethostron-mcp
 
-ENV NODE_ENV=production
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
-
-COPY --from=builder /app/dist ./dist
-COPY LICENSE README.md ./
-
-USER node
-
-ENTRYPOINT ["node", "dist/index.js"]
+CMD ["mcp-proxy", "--", "node", "node_modules/@aiethos/ethostron-mcp/dist/index.js"]
