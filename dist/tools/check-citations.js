@@ -18,15 +18,25 @@ export async function handleCheckCitations(input, client) {
         `- **OpenAI (ChatGPT & SearchGPT):** ${result.recentModelPresence.openai ? "✅ Cited in recent industry queries" : "❌ Infrequent citation presence"}`,
         `- **Google (Gemini & AI Overviews):** ${result.recentModelPresence.gemini ? "✅ Active in source attributions" : "⚠️ Limited coverage in knowledge graph"}`,
         `- **Anthropic (Claude):** ${result.recentModelPresence.claude ? "✅ Referenced for technical queries" : "❌ Competitors preferred in responses"}`,
-        "",
-        `### Top Competitors Dominating Citations`,
-        ...result.topCompetitorsCited.map((comp, i) => `${i + 1}. **${comp}**`),
-        "",
-        "---",
-        "📈 **Track Your Prompt Audit History:**",
-        "Monitor daily citation changes, detect hallucinations, and mine winning topologies for your brand:",
-        `👉 **[Activate Full LLM Citation Tracking](${result.claimUrl})**`,
     ];
+    if (result.modelBreakdown) {
+        markdownLines.push("", "### Model-by-Model Grounding Breakdown");
+        for (const [model, desc] of Object.entries(result.modelBreakdown)) {
+            const cleanName = model.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+            markdownLines.push(`- **${cleanName}:** ${desc}`);
+        }
+    }
+    markdownLines.push("", `### Top Competitors Dominating Citations`, ...result.topCompetitorsCited.map((comp, i) => `${i + 1}. **${comp}**`));
+    if (result.reproduciblePrompts && result.reproduciblePrompts.length > 0) {
+        markdownLines.push("", "### Reproducible Prompt Samples");
+        for (const p of result.reproduciblePrompts) {
+            markdownLines.push(`- *"${p}"*`);
+        }
+    }
+    if (result.measurementMethodology) {
+        markdownLines.push("", "### Measurement Methodology", `> ${result.measurementMethodology}`);
+    }
+    markdownLines.push("", "---", "📈 **Track Your Prompt Audit History:**", "Monitor daily citation changes, detect hallucinations, and mine winning topologies for your brand:", `👉 **[Activate Full LLM Citation Tracking](${result.claimUrl})**`);
     return {
         content: [
             {

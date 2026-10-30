@@ -3,7 +3,7 @@
  */
 
 export const SERVER_NAME = "ethostron-mcp";
-export const SERVER_VERSION = "0.1.0";
+export const SERVER_VERSION = "0.2.0";
 
 export const CONFIG = {
   backendUrl: process.env.AIETHOS_BACKEND_URL || "https://aiethos-backend-978593064341.us-west2.run.app",

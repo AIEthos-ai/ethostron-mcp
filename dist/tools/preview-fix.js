@@ -19,22 +19,16 @@ export const PreviewFixInputSchema = z.object({
 });
 export async function handlePreviewFix(input, client) {
     const result = await client.previewEthosTronFix(input.url, input.gap_topic, input.intent_category);
+    const pageRoleInfo = result.pageType ? ` (Detected Page Role: \`${result.pageType.charAt(0).toUpperCase() + result.pageType.slice(1)}\`)` : "";
     const markdownLines = [
         `## ✦ EthosTron Live Sample Auto-Fix: "${result.topic}"`,
-        `**Target Asset:** \`${result.targetUrl}\``,
-        `**Winning Topology Applied:** \`${result.winningTopologyApplied}\``,
+        `**Target Asset:** \`${result.targetUrl}\`${pageRoleInfo}`,
+        `**Winning Topology Applied:** \`${result.winningTopologyApplied.replace(/_/g, " ").toUpperCase()}\``,
         `**Recommended Schema.org Type:** \`${result.recommendedSchema}\``,
-        `**Direct-Answer Word Count:** ${result.wordCount} words (Optimized for snippet extraction)`,
+        `**Direct-Answer Word Count:** ${result.wordCount} words (Optimized 45–65 word extraction target)`,
         "",
         "### Synthesized Direct-Answer Content Block",
-        "```markdown",
         result.synthesizedMarkdown,
-        "```",
-        "",
-        "### Formatting Rationale for LLM Retrieval",
-        "1. **Inverted Pyramid Lead:** Opens with a concise, declarative 45–60 word answer that search engines can quote verbatim.",
-        "2. **Structured Verification Anchors:** Bullet points ground claims with third-party verification markers.",
-        `3. **Schema Compliance:** Wrap this block in \`${result.recommendedSchema}\` JSON-LD microdata for maximum indexing confidence.`,
         "",
         "---",
         "🚀 **Deploy this Fix Automatically with AI Ethos:**",

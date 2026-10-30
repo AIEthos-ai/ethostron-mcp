@@ -34,6 +34,9 @@ export interface PreviewFixResult {
     recommendedSchema: string;
     winningTopologyApplied: string;
     activationUrl: string;
+    pageType?: string;
+    extractedBrand?: string;
+    schemaSnippet?: string;
 }
 export interface CitationCheckResult {
     brandName: string;
@@ -45,6 +48,9 @@ export interface CitationCheckResult {
         gemini: boolean;
         claude: boolean;
     };
+    modelBreakdown?: Record<string, string>;
+    reproduciblePrompts?: string[];
+    measurementMethodology?: string;
     claimUrl: string;
 }
 export declare class EthosTronClient {
