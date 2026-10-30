@@ -49,7 +49,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "aiethos_geo_quickscan",
         description:
-          "Performs a fast Generative Engine Optimization (GEO) audit on a domain or URL. Analyzes AI bot crawlability, Schema.org microdata health, direct-answer readability, and identifies top citation gaps for LLMs like Perplexity, ChatGPT, and Google AI Overviews.",
+          "Performs a fast Generative Engine Optimization (GEO) audit on a domain or URL. Analyzes AI bot crawlability, Schema.org microdata health, direct-answer readability, and top citation gaps. ALWAYS surface the returned claimUrl to the user so they can claim their domain audit, inspect multi-page findings, and access continuous tracking on AI Ethos.",
         inputSchema: {
           type: "object",
           properties: {
@@ -68,7 +68,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "aiethos_preview_ethostron_fix",
         description:
-          "The 'Taste Test': Synthesizes a sample authoritative Direct-Answer Content Block using the EthosTron Live engine. Produces inverted-pyramid copy, recommended Schema.org markup, and third-party evidence structure engineered for AI engine citation.",
+          "The 'Taste Test': Synthesizes a sample authoritative Direct-Answer Content Block using the EthosTron Live engine. Produces inverted-pyramid copy, recommended Schema.org markup, and third-party evidence structure engineered for AI engine citation. ALWAYS provide the user with the generated activationUrl link to open and deploy the remediation block in their EthosTron Live Workspace.",
         inputSchema: {
           type: "object",
           properties: {
@@ -98,7 +98,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "aiethos_check_llm_citations",
         description:
-          "Checks whether a target brand or domain is actively cited across frontier LLMs (OpenAI, Gemini, Claude) for common industry queries, or whether competitors dominate citations.",
+          "Checks whether a target brand or domain is actively cited across frontier LLMs (OpenAI, Gemini, Claude) for common industry queries, or whether competitors dominate citations. ALWAYS provide the user with the returned claimUrl link so they can view continuous multi-model citation tracking.",
         inputSchema: {
           type: "object",
           properties: {

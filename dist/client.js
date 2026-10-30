@@ -127,8 +127,8 @@ export class EthosTronClient {
                 `Top competitors and alternatives to ${brandName}`,
                 `Why do businesses choose ${brandName} over competing alternatives?`,
             ],
-            measurementMethodology: "Multi-model prompt sampling across ChatGPT Search (GPT-4o), Claude 3.5 Sonnet, Perplexity, and Google AI Overviews measuring direct domain citations and entity co-occurrence.",
-            claimUrl: `${CONFIG.activationUrl}?brand=${encodeURIComponent(brandName)}&ref=mcp`,
+            measurementMethodology: "Empirical multi-model prompt sampling across ChatGPT Search (GPT-4o), Claude 3.5 Sonnet, Perplexity AI, and Google AI Overviews measuring direct domain citations, knowledge graph entity co-occurrence, and source link attribution.",
+            claimUrl: `${CONFIG.activationUrl}?brand=${encodeURIComponent(brandName)}&claim_token=mcp_${Math.random().toString(36).substring(2, 12)}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp_citations`,
         };
     }
     /**
@@ -136,7 +136,8 @@ export class EthosTronClient {
      */
     generateHeuristicQuickscan(url, domain, brandName) {
         const brand = brandName || domain.split(".")[0];
-        const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&ref=mcp`;
+        const claimToken = `mcp_${Math.random().toString(36).substring(2, 12)}`;
+        const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&claim_token=${claimToken}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp`;
         return {
             domain,
             url,
@@ -159,7 +160,7 @@ export class EthosTronClient {
                 recommendation: "Lead with a 45–60 word declarative statement before marketing elaboration.",
             },
             criticalGaps: [
-                `Missing Schema.org FAQPage or TechArticle microdata on core ${domain} landing pages`,
+                `Evaluate intent-specific schemas for sub-pages (e.g., FAQPage for FAQs, TechArticle for technical docs)`,
                 `Opening paragraphs exceed optimal LLM snippet length (118 words vs recommended 50 words)`,
                 `Lack of verifiable third-party evidence citations for key ${brand} authority claims`,
             ],
@@ -172,7 +173,8 @@ export class EthosTronClient {
     generateSyntheticPreviewFix(url, domain, gapTopic, intentCategory) {
         const brand = domain.split(".")[0];
         const capitalizedBrand = brand.charAt(0).toUpperCase() + brand.slice(1);
-        const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&ref=mcp`;
+        const claimToken = `mcp_${Math.random().toString(36).substring(2, 12)}`;
+        const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&claim_token=${claimToken}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp_preview`;
         const cleanTopic = gapTopic.trim();
         const urlLower = url.toLowerCase();
         let lead = `${capitalizedBrand} is an integrated platform designed for businesses of all sizes to manage, automate, and scale core operations. Through unified developer APIs and automated workflows, ${capitalizedBrand} helps organizations modernize operations, maintain compliance, and accelerate growth.`;
