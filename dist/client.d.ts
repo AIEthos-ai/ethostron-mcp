@@ -37,6 +37,8 @@ export interface QualityEvaluation {
     keywordStuffingRisk: number;
     schemaSelectionAccuracy: number;
     remediationRationale: string;
+    groundingStatus?: string;
+    groundedSignals?: string[];
 }
 export interface PreviewFixResult {
     topic: string;
@@ -48,6 +50,7 @@ export interface PreviewFixResult {
     activationUrl: string;
     pageType?: string;
     extractedBrand?: string;
+    vertical?: string;
     schemaSnippet?: string;
     qualityEvaluation?: QualityEvaluation;
 }

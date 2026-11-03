@@ -27,7 +27,7 @@ describe("EthosTron MCP Tools", () => {
     expect(result.content[0].text).toContain("Overall GEO Readiness Score");
   });
 
-  it("should validate and execute aiethos_preview_ethostron_fix with fallback", async () => {
+  it("should validate and execute aiethos_preview_ethostron_fix with fallback and drop-in JSON-LD", async () => {
     const input = PreviewFixInputSchema.parse({
       url: "https://example.com/solutions/security",
       gap_topic: "Deterministic Hallucination Prevention",
@@ -38,19 +38,24 @@ describe("EthosTron MCP Tools", () => {
     expect(result.content).toHaveLength(1);
     expect(result.content[0].text).toContain("EthosTron Live Sample Auto-Fix");
     expect(result.content[0].text).toContain("Inverted Pyramid Lead");
+    expect(result.content[0].text).toContain("Factual Grounding Status");
+    expect(result.content[0].text).toContain("Recommended Schema.org JSON-LD (Drop-In Code)");
+    expect(result.content[0].text).toContain("<script type=\"application/ld+json\">");
     expect(result.content[0].text).toContain("Open in EthosTron Live Workspace");
   });
 
-  it("should validate and execute aiethos_check_llm_citations with fallback", async () => {
+  it("should validate and execute aiethos_check_llm_citations with fallback and real competitors", async () => {
     const input = CheckCitationsInputSchema.parse({
-      brand_name: "Acme AI",
-      industry_category: "Observability",
+      brand_name: "Logan Family Properties",
+      industry_category: "Property Management",
     });
 
     const result = await handleCheckCitations(input, client);
     expect(result.content).toHaveLength(1);
-    expect(result.content[0].text).toContain("AI Ethos LLM Citation Benchmark: `Acme AI`");
+    expect(result.content[0].text).toContain("AI Ethos LLM Citation Benchmark: `Logan Family Properties`");
     expect(result.content[0].text).toContain("Frontier Model Citation Presence");
     expect(result.content[0].text).toContain("Activate Full LLM Citation Tracking");
+    expect(result.content[0].text).not.toContain("Peer A");
+    expect(result.content[0].text).toContain("AppFolio");
   });
 });
