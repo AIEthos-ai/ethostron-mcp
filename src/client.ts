@@ -1,6 +1,7 @@
 /**
  * EthosTron API Client
- * Connects the MCP Server to the AI Ethos backend diagnostic and remediation services.
+ * Zero-Knowledge Thin Client connecting the MCP Server to the AI Ethos backend.
+ * All scoring math, winning topologies, and prompt logic execute in Cloud Run.
  */
 
 import { CONFIG, SERVER_VERSION } from "./config.js";
@@ -30,21 +31,6 @@ export interface GeoQuickscanResult {
   claimUrl: string;
 }
 
-export interface QualityEvaluation {
-  overallQualityScore: number;
-  remediationAction: "add_foundational_block" | "improve_existing_answer" | "no_change_needed";
-  existingAnswerDetected: boolean;
-  factualRelevance: number;
-  brandAlignment: number;
-  queryAlignment: number;
-  extractabilityScore: number;
-  keywordStuffingRisk: number;
-  schemaSelectionAccuracy: number;
-  remediationRationale: string;
-  groundingStatus?: string;
-  groundedSignals?: string[];
-}
-
 export interface PreviewFixResult {
   topic: string;
   targetUrl: string;
@@ -57,7 +43,18 @@ export interface PreviewFixResult {
   extractedBrand?: string;
   vertical?: string;
   schemaSnippet?: string;
-  qualityEvaluation?: QualityEvaluation;
+  qualityEvaluation?: {
+    overallQualityScore: number;
+    remediationAction: string;
+    factualRelevance: number;
+    brandAlignment: number;
+    queryAlignment: number;
+    extractabilityScore: number;
+    keywordStuffingRisk: number;
+    schemaSelectionAccuracy: number;
+    remediationRationale: string;
+    groundingStatus?: string;
+  };
 }
 
 export interface CitationCheckResult {
@@ -76,144 +73,98 @@ export interface CitationCheckResult {
   claimUrl: string;
 }
 
-interface VerticalProfile {
-  vertical: string;
-  schema: string;
-  peers: string[];
-  sampleLead: string;
-  jsonLd: Record<string, unknown>;
+export interface RemediationItem {
+  id: string;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  dueDate?: string | null;
+  dynamicPriorityScore: number;
+  remediationAction: string;
+  recommendedSchema: string;
+  targetPageUrl: string;
 }
 
-function detectVerticalProfile(domain: string, url: string, brand: string, topic?: string): VerticalProfile {
-  const text = `${domain} ${url} ${topic || ""}`.toLowerCase();
-
-  if (text.match(/property|properties|rental|realestate|realtor|leasing|apartment|housing|condo/)) {
-    return {
-      vertical: "Real Estate & Property Management",
-      schema: "Organization",
-      peers: ["AppFolio", "Buildium", "RealPage", "Greystar", "Compass PM"],
-      sampleLead: `${brand} is a full-service residential property management company specializing in single-family homes, condominiums, and multi-family rental residences. Providing end-to-end leasing, tenant placement, maintenance coordination, and transparent financial reporting, the company protects asset values and streamlines rental operations for property owners.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: brand,
-        url: url,
-        description: `${brand} is a residential property management company providing leasing, maintenance, and owner accounting.`,
-        areaServed: "Regional Market",
-      },
-    };
-  }
-
-  if (text.match(/health|clinic|medical|care|dental|pharma|doctor|hospital|therapy/)) {
-    return {
-      vertical: "Healthcare & Clinical Services",
-      schema: "MedicalBusiness",
-      peers: ["Kaiser Permanente", "Mayo Clinic", "One Medical", "WebMD Care"],
-      sampleLead: `${brand} is a specialized clinical healthcare practice providing comprehensive medical care, preventative diagnostics, and patient-centered treatments. Operated by licensed practitioners, the practice combines modern clinical technology with evidence-based medicine to deliver accessible, high-standard patient care.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "MedicalBusiness",
-        name: brand,
-        url: url,
-        description: `${brand} provides clinical healthcare diagnostics, treatment, and patient-centered care.`,
-      },
-    };
-  }
-
-  if (text.match(/law|legal|attorney|counsel|lawyer|litigation|defense/)) {
-    return {
-      vertical: "Legal Services & Counsel",
-      schema: "LegalService",
-      peers: ["Morgan & Morgan", "Clio Legal", "Avvo", "FindLaw Directory"],
-      sampleLead: `${brand} is a dedicated legal practice providing specialized legal representation, transactional counsel, and strategic dispute resolution. Serving individual and corporate clients, the firm delivers rigorous case preparation, regulatory compliance guidance, and courtroom advocacy.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "LegalService",
-        name: brand,
-        url: url,
-        description: `${brand} delivers legal representation, transactional advisory, and litigation counsel.`,
-      },
-    };
-  }
-
-  if (text.match(/plumb|roof|electric|hvac|contractor|remodel|paint|landscap/)) {
-    return {
-      vertical: "Local Home & Trade Services",
-      schema: "HomeAndConstructionBusiness",
-      peers: ["Angi", "Thumbtack", "Roto-Rooter", "Houzz Pro"],
-      sampleLead: `${brand} is a licensed and insured trade contractor offering residential and commercial maintenance, installations, and emergency repairs. Backed by certified technicians and transparent estimates, the company delivers reliable workmanship with comprehensive safety and warranty guarantees.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "HomeAndConstructionBusiness",
-        name: brand,
-        url: url,
-        description: `Licensed trade contractor delivering certified installations, repairs, and property maintenance.`,
-      },
-    };
-  }
-
-  if (text.match(/shop|store|boutique|cart|ecommerce|retail|apparel|goods/)) {
-    return {
-      vertical: "E-Commerce & Digital Commerce",
-      schema: "OnlineStore",
-      peers: ["Shopify", "BigCommerce", "Amazon Storefront", "WooCommerce"],
-      sampleLead: `${brand} is a direct-to-consumer digital commerce brand offering curated consumer products with global shipping and customer fulfillment. Featuring secure digital checkout, authentic product sourcing, and flexible return policies, the brand delivers transparent retail shopping experiences.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "OnlineStore",
-        name: brand,
-        url: url,
-        description: `Direct-to-consumer online storefront delivering verified goods and customer fulfillment.`,
-      },
-    };
-  }
-
-  if (text.match(/pay|stripe|bank|fintech|invest|loan|credit|capital/)) {
-    return {
-      vertical: "Fintech & Financial Infrastructure",
-      schema: "FinancialService",
-      peers: ["Adyen", "Stripe", "PayPal", "Checkout.com", "Square"],
-      sampleLead: `${brand} is a financial infrastructure platform enabling modern businesses to accept global payments, manage recurring billing, and automate cross-border settlements. Built with developer APIs and built-in compliance, the platform optimizes authorization rates while safeguarding financial transactions.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "FinancialService",
-        name: brand,
-        url: url,
-        description: `Financial technology and payment infrastructure platform.`,
-      },
-    };
-  }
-
-  if (text.match(/api|cloud|saas|software|dev|platform|aiethos|data/)) {
-    return {
-      vertical: "SaaS & Developer Infrastructure",
-      schema: "SoftwareApplication",
-      peers: ["Datadog", "Cloudflare", "GitHub", "Vercel", "AIEthos"],
-      sampleLead: `${brand} is a cloud software platform delivering automated developer workflows, infrastructure monitoring, and real-time operational analytics. Through unified APIs and autonomous agent protocols, the system accelerates engineering delivery while maintaining strict compliance standards.`,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        name: brand,
-        url: url,
-        applicationCategory: "DeveloperApplication",
-        description: `Cloud platform delivering automated workflows and developer infrastructure.`,
-      },
-    };
-  }
-
-  return {
-    vertical: "Professional Services & Solutions",
-    schema: "Organization",
-    peers: ["Accenture", "Deloitte", "McKinsey Digital", "Industry Benchmark Leaders"],
-    sampleLead: `${brand} is a professional solutions and consulting organization providing strategic advisory, digital transformation, and operational management services. Partnering with enterprise and mid-market organizations, the firm delivers measurable business impact and technology integration.`,
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: brand,
-      url: url,
-      description: `Professional solutions organization providing strategic advisory and operational delivery.`,
-    },
+export interface RemediationFixResult {
+  remediationId: string;
+  title: string;
+  remediationAction: string;
+  targetPageUrl: string;
+  targetSelectorHint: string;
+  invertedPyramidCopy: {
+    text: string;
+    wordCount: number;
+    optimalRange: string;
+    extractabilityScore: number;
   };
+  schemaMarkup: Record<string, unknown>;
+  dropInSnippets: Record<string, string>;
+  qualityMatrix: Record<string, unknown>;
+  remainingCredits: number;
+}
+
+export interface LintResult {
+  passed: boolean;
+  issues: Array<{
+    severity: string;
+    category: string;
+    message: string;
+    recommendation: string;
+  }>;
+  detectedLeadWordCount?: number;
+  hasJsonLd: boolean;
+  remainingCredits: number;
+}
+
+export interface GroundingResult {
+  groundingScore: number;
+  isGrounded: boolean;
+  verifiedSignals: string[];
+  unverifiedAssertions: string[];
+  remainingCredits: number;
+}
+
+export interface DeepScanJob {
+  jobId: string;
+  status: string;
+  estimatedDurationSeconds: number;
+  pagesTargeted: number;
+  dashboardLiveUrl: string;
+  pollingInstruction: string;
+  remainingCredits: number;
+}
+
+export interface JobStatusResult {
+  jobId: string;
+  status: string;
+  progressPercentage: number;
+  pagesCrawled: number;
+  pagesTargeted: number;
+  glamdringScore?: number;
+  reportSummary?: string;
+}
+
+export interface PromptItem {
+  id: string;
+  promptText: string;
+  intentCategory: string;
+  trackedModels: string[];
+  lastTestedAt?: string;
+  citationRatePercentage?: number;
+}
+
+export interface PromptAuditResult {
+  testedQuery: string;
+  citationsByModel: Record<string, any>;
+  overallSentiment: string;
+  competitorsCited: string[];
+  remainingCredits: number;
+}
+
+export interface RobotsResult {
+  framework: string;
+  code: string;
 }
 
 export class EthosTronClient {
@@ -229,6 +180,7 @@ export class EthosTronClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "User-Agent": `EthosTron-MCP/${SERVER_VERSION}`,
+      "x-client-type": "IDE-Agent",
     };
     if (this.apiKey) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
@@ -237,264 +189,355 @@ export class EthosTronClient {
     return headers;
   }
 
-  /**
-   * Performs a rapid Generative Engine Optimization audit for a URL.
-   */
-  async geoQuickscan(targetUrl: string, brandName?: string): Promise<GeoQuickscanResult> {
-    const cleanUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
-    const domain = new URL(cleanUrl).hostname.replace(/^www\./, "");
-
-    try {
-      const resp = await fetch(`${this.backendUrl}/public/mcp/quickscan`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ url: cleanUrl, brand_name: brandName }),
-        signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
-      });
-
-      if (resp.ok) {
-        const data = (await resp.json()) as Record<string, any>;
-        return {
-          domain: data.domain || domain,
-          url: data.url || cleanUrl,
-          geoScore: data.geoScore ?? data.geo_score ?? 50,
-          crawlerStatus: data.crawlerStatus || data.crawler_status,
-          schemaHealth: data.schemaHealth || data.schema_health,
-          directAnswerReadability: data.directAnswerReadability || data.direct_answer_readability,
-          criticalGaps: data.criticalGaps || data.critical_gaps || [],
-          claimUrl: data.claimUrl || data.claim_url || "",
-        };
-      }
-    } catch {
-      // Fallback to local heuristic scan if remote endpoint is unreachable or deploying
+  private ensureApiKey(): void {
+    if (!this.apiKey) {
+      throw new Error(
+        "Authentication required: This tool requires an active AI Ethos subscription and API Key. " +
+        "Claim your domain and generate your API key at https://aiethos.ai/dashboard/account?tab=api-access " +
+        "then set AIETHOS_API_KEY in your MCP configuration."
+      );
     }
-
-    return this.generateHeuristicQuickscan(cleanUrl, domain, brandName);
   }
 
-  /**
-   * Generates a sample EthosTron Live direct-answer block for a topic.
-   */
+  // --- Public Diagnostic Tools ---
+
+  async geoQuickscan(targetUrl: string, brandName?: string): Promise<GeoQuickscanResult> {
+    const cleanUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+    const resp = await fetch(`${this.backendUrl}/public/mcp/quickscan`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ url: cleanUrl, brand_name: brandName }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`GEO quickscan failed (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      domain: data.domain,
+      url: data.url || cleanUrl,
+      geoScore: data.geoScore ?? data.geo_score ?? 50,
+      crawlerStatus: data.crawlerStatus || data.crawler_status,
+      schemaHealth: data.schemaHealth || data.schema_health,
+      directAnswerReadability: data.directAnswerReadability || data.direct_answer_readability,
+      criticalGaps: data.criticalGaps || data.critical_gaps || [],
+      claimUrl: data.claimUrl || data.claim_url || "",
+    };
+  }
+
   async previewEthosTronFix(
     targetUrl: string,
     gapTopic: string,
     intentCategory = "definitive_architecture"
   ): Promise<PreviewFixResult> {
     const cleanUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
-    const domain = new URL(cleanUrl).hostname.replace(/^www\./, "");
+    const resp = await fetch(`${this.backendUrl}/public/mcp/preview-fix`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        url: cleanUrl,
+        gap_topic: gapTopic,
+        intent_category: intentCategory,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
 
-    try {
-      const resp = await fetch(`${this.backendUrl}/public/mcp/preview-fix`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          url: cleanUrl,
-          gap_topic: gapTopic,
-          intent_category: intentCategory,
-        }),
-        signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
-      });
-
-      if (resp.ok) {
-        const data = (await resp.json()) as Record<string, any>;
-        return {
-          topic: data.topic || gapTopic,
-          targetUrl: data.targetUrl || data.target_url || cleanUrl,
-          synthesizedMarkdown: data.synthesizedMarkdown || data.synthesized_markdown || "",
-          wordCount: data.wordCount || data.word_count || 0,
-          recommendedSchema: data.recommendedSchema || data.recommended_schema || "Organization",
-          winningTopologyApplied: data.winningTopologyApplied || data.winning_topology_applied || intentCategory,
-          activationUrl: data.activationUrl || data.activation_url || "",
-          pageType: data.pageType || data.page_type,
-          extractedBrand: data.extractedBrand || data.extracted_brand,
-          vertical: data.vertical,
-          schemaSnippet: data.schemaSnippet || data.schema_snippet,
-          qualityEvaluation: data.qualityEvaluation || data.quality_evaluation,
-        };
-      }
-    } catch {
-      // Graceful fallback
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Preview fix generation failed (${resp.status}): ${err}`);
     }
 
-    return this.generateSyntheticPreviewFix(cleanUrl, domain, gapTopic, intentCategory);
+    const data = (await resp.json()) as any;
+    return {
+      topic: data.topic,
+      targetUrl: data.targetUrl || data.target_url || cleanUrl,
+      synthesizedMarkdown: data.synthesizedMarkdown || data.synthesized_markdown,
+      wordCount: data.wordCount || data.word_count || 0,
+      recommendedSchema: data.recommendedSchema || data.recommended_schema || "Organization",
+      winningTopologyApplied: data.winningTopologyApplied || data.winning_topology_applied,
+      activationUrl: data.activationUrl || data.activation_url || "",
+      qualityEvaluation: data.qualityEvaluation || data.quality_evaluation,
+    };
   }
 
-  /**
-   * Checks frontier LLM citation share for a brand.
-   */
   async checkLlmCitations(brandName: string, industryCategory?: string): Promise<CitationCheckResult> {
-    try {
-      const resp = await fetch(`${this.backendUrl}/public/mcp/check-citations`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ brand_name: brandName, industry_category: industryCategory }),
-        signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
-      });
+    const resp = await fetch(`${this.backendUrl}/public/mcp/check-citations`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        brand_name: brandName,
+        industry_category: industryCategory,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
 
-      if (resp.ok) {
-        const data = (await resp.json()) as Record<string, any>;
-        return {
-          brandName: data.brandName || data.brand_name || brandName,
-          industryCategory: data.industryCategory || data.industry_category || industryCategory,
-          citationShareEstimate: data.citationShareEstimate || data.citation_share_estimate || "",
-          topCompetitorsCited: data.topCompetitorsCited || data.top_competitors_cited || [],
-          recentModelPresence: data.recentModelPresence || data.recent_model_presence,
-          modelBreakdown: data.modelBreakdown || data.model_breakdown,
-          reproduciblePrompts: data.reproduciblePrompts || data.reproducible_prompts,
-          measurementMethodology: data.measurementMethodology || data.measurement_methodology,
-          claimUrl: data.claimUrl || data.claim_url || "",
-        };
-      }
-    } catch {
-      // Fallback
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Citation check failed (${resp.status}): ${err}`);
     }
 
-    const domain = brandName.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const vInfo = detectVerticalProfile(domain, `https://${domain}.com`, brandName, industryCategory);
-    const industry = industryCategory || vInfo.vertical;
-    const share = "28% - 44% (Estimated Citation Share)";
-
+    const data = (await resp.json()) as any;
     return {
-      brandName,
-      industryCategory: industry,
-      citationShareEstimate: share,
-      topCompetitorsCited: vInfo.peers,
-      recentModelPresence: {
-        openai: true,
-        gemini: false,
-        claude: true,
-      },
-      modelBreakdown: {
-        chatgpt_searchgpt: "Cited (Primary corporate entity definition & documentation links)",
-        google_ai_overviews: "Limited (Surfaced in select regional or category queries)",
-        anthropic_claude: "Cited (Referenced for architecture, services, and comparisons)",
-        perplexity: "Cited (Direct citations to product and services overview pages)",
-      },
-      reproduciblePrompts: [
-        `What is ${brandName} and what core services does it provide?`,
-        `Top competitors and alternatives to ${brandName} in ${industry}`,
-        `Why do customers choose ${brandName} over competing alternatives?`,
-      ],
-      measurementMethodology:
-        "Empirical multi-model prompt sampling across ChatGPT Search (GPT-4o), Claude 3.5 Sonnet, Perplexity AI, and Google AI Overviews measuring direct domain citations, knowledge graph entity co-occurrence, and source link attribution.",
-      claimUrl: `${CONFIG.activationUrl}?brand=${encodeURIComponent(brandName)}&claim_token=mcp_${Math.random().toString(36).substring(2, 12)}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp_citations`,
+      brandName: data.brandName || data.brand_name || brandName,
+      industryCategory: data.industryCategory || data.industry_category,
+      citationShareEstimate: data.citationShareEstimate || data.citation_share_estimate,
+      topCompetitorsCited: data.topCompetitorsCited || data.top_competitors_cited || [],
+      recentModelPresence: data.recentModelPresence || data.recent_model_presence || { openai: true, gemini: false, claude: true },
+      claimUrl: data.claimUrl || data.claim_url || "",
     };
   }
 
-  /**
-   * Offline heuristic quickscan when remote endpoint is not yet connected.
-   */
-  private generateHeuristicQuickscan(url: string, domain: string, brandName?: string): GeoQuickscanResult {
-    const rawBrand = brandName || domain.split(".")[0];
-    const brand = rawBrand.charAt(0).toUpperCase() + rawBrand.slice(1);
-    const vInfo = detectVerticalProfile(domain, url, brand);
-    const claimToken = `mcp_${Math.random().toString(36).substring(2, 12)}`;
-    const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&claim_token=${claimToken}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp`;
+  // --- Paid In-IDE Remediation Tools ---
 
+  async listRemediations(priority = "all", limit = 10): Promise<RemediationItem[]> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/remediations?priority=${priority}&limit=${limit}`, {
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to load remediations (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any[];
+    return data.map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      priority: item.priority,
+      status: item.status,
+      dueDate: item.due_date,
+      dynamicPriorityScore: item.dynamic_priority_score,
+      remediationAction: item.remediation_action,
+      recommendedSchema: item.recommended_schema,
+      targetPageUrl: item.target_page_url,
+    }));
+  }
+
+  async getRemediationFix(
+    remediationId?: string,
+    targetUrl?: string,
+    topic?: string,
+    framework = "nextjs_app_router"
+  ): Promise<RemediationFixResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/remediations/fix`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        remediation_id: remediationId,
+        target_url: targetUrl,
+        topic,
+        framework,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to synthesize remediation fix (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
     return {
-      domain,
-      url,
-      geoScore: 54,
-      crawlerStatus: {
-        gptBot: "allowed",
-        perplexityBot: "not_specified",
-        claudeBot: "allowed",
-        googleExtended: "allowed",
+      remediationId: data.remediation_id,
+      title: data.title,
+      remediationAction: data.remediation_action,
+      targetPageUrl: data.target_page_url,
+      targetSelectorHint: data.target_selector_hint,
+      invertedPyramidCopy: {
+        text: data.inverted_pyramid_copy?.text,
+        wordCount: data.inverted_pyramid_copy?.word_count,
+        optimalRange: data.inverted_pyramid_copy?.optimal_range,
+        extractabilityScore: data.inverted_pyramid_copy?.extractability_score,
       },
-      schemaHealth: {
-        hasJsonLd: false,
-        detectedTypes: [],
-        missingRecommendedTypes: [vInfo.schema, "WebSite", "FAQPage"],
-      },
-      directAnswerReadability: {
-        invertedPyramidDetected: false,
-        openingParagraphWordCount: 118,
-        status: "too_verbose",
-        recommendation: "Lead with a 45–60 word declarative statement answering who, what, and where before marketing elaboration.",
-      },
-      criticalGaps: [
-        `Missing Schema.org JSON-LD microdata: Deploy '${vInfo.schema}' schema to anchor knowledge graph entity resolution.`,
-        `Opening viewport copy exceeds optimal LLM extraction length (118 words vs recommended 45–65 words).`,
-        `Absence of verifiable factual grounding signals allows competitor displacement in zero-click answers.`,
-      ],
-      claimUrl,
+      schemaMarkup: data.schema_markup,
+      dropInSnippets: data.drop_in_snippets,
+      qualityMatrix: data.quality_matrix,
+      remainingCredits: data.remaining_credits,
     };
   }
 
-  /**
-   * Offline synthetic preview generator using EthosTron direct-answer principles.
-   */
-  private generateSyntheticPreviewFix(
-    url: string,
-    domain: string,
-    gapTopic: string,
-    intentCategory: string
-  ): PreviewFixResult {
-    const rawBrand = domain.split(".")[0];
-    const capitalizedBrand = rawBrand.charAt(0).toUpperCase() + rawBrand.slice(1);
-    const claimToken = `mcp_${Math.random().toString(36).substring(2, 12)}`;
-    const claimUrl = `${CONFIG.activationUrl}?domain=${encodeURIComponent(domain)}&claim_token=${claimToken}&utm_source=ethostron_mcp&utm_medium=ai_copilot&ref=mcp_preview`;
-    const cleanTopic = gapTopic.trim();
+  async lintStagedContent(fileContent: string, filePath?: string): Promise<LintResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/lint`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        file_content: fileContent,
+        file_path: filePath,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
 
-    const vInfo = detectVerticalProfile(domain, url, capitalizedBrand, gapTopic);
-    const lead = vInfo.sampleLead;
-    const schema = vInfo.schema;
-    const topology = intentCategory || "entity_definition";
-    const pageRole = url.includes("/about") ? "about" : url.includes("/services") ? "service" : "homepage";
-    const action: "add_foundational_block" | "improve_existing_answer" = "add_foundational_block";
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to lint staged content (${resp.status}): ${err}`);
+    }
 
-    const wordCount = lead.split(/\s+/).length;
-
-    const quality: QualityEvaluation = {
-      overallQualityScore: 96,
-      remediationAction: action,
-      existingAnswerDetected: false,
-      factualRelevance: 96,
-      brandAlignment: 97,
-      queryAlignment: 94,
-      extractabilityScore: 96,
-      keywordStuffingRisk: 0,
-      schemaSelectionAccuracy: 96,
-      groundingStatus: "Empirically Verified On-Page",
-      groundedSignals: [capitalizedBrand, vInfo.vertical, schema],
-      remediationRationale:
-        "No structured direct-answer block detected on page. Adding a foundational lead definition anchors entity extraction across frontier LLMs.",
-    };
-
-    const actionBadge = "✦ Foundational Opportunity";
-    const actionLabel = "ADD_FOUNDATIONAL_BLOCK (New Lead Definition)";
-
-    const markdown = [
-      `### ${actionBadge}: Direct Answer for "${cleanTopic}"`,
-      `**Target Asset:** \`${url}\` (Detected Vertical: \`${vInfo.vertical}\`)`,
-      `**Remediation Action:** \`${actionLabel}\``,
-      "",
-      `#### Inverted Pyramid Lead (Optimal 45–65 Words for LLM Retrieval):`,
-      `"${lead}"`,
-      "",
-      `#### Automated Answer Quality Score: ${quality.overallQualityScore}/100 (Optimal)`,
-      `- **Factual Grounding Status:** ✅ ${quality.groundingStatus}`,
-      `- **Brand & Product Alignment:** ${quality.brandAlignment}/100 (Accurately identifies ${capitalizedBrand} as ${vInfo.vertical})`,
-      `- **Extractability Score:** ${quality.extractabilityScore}/100 (${wordCount} words — optimal 45–65 word sweet spot)`,
-      `- **Keyword Stuffing Risk:** ${quality.keywordStuffingRisk}% (Fluent natural syntax, zero artificial repetition)`,
-      `- **Schema Match Confidence:** ${quality.schemaSelectionAccuracy}/100 (\`${schema}\` aligns with ${pageRole} role)`,
-    ].join("\n");
-
-    const schemaSnippet = `<script type="application/ld+json">\n${JSON.stringify(vInfo.jsonLd, null, 2)}\n</script>`;
-
+    const data = (await resp.json()) as any;
     return {
-      topic: cleanTopic,
-      targetUrl: url,
-      synthesizedMarkdown: markdown,
-      wordCount,
-      recommendedSchema: schema,
-      winningTopologyApplied: topology,
-      pageType: pageRole,
-      extractedBrand: capitalizedBrand,
-      vertical: vInfo.vertical,
-      schemaSnippet,
-      qualityEvaluation: quality,
-      activationUrl: claimUrl,
+      passed: data.passed,
+      issues: data.issues || [],
+      detectedLeadWordCount: data.detected_lead_word_count,
+      hasJsonLd: data.has_json_ld,
+      remainingCredits: data.remaining_credits,
+    };
+  }
+
+  async verifyFactualGrounding(proposedText: string, targetUrl?: string): Promise<GroundingResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/grounding/verify`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        proposed_text: proposedText,
+        target_url: targetUrl,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Grounding verification failed (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      groundingScore: data.grounding_score,
+      isGrounded: data.is_grounded,
+      verifiedSignals: data.verified_signals || [],
+      unverifiedAssertions: data.unverified_assertions || [],
+      remainingCredits: data.remaining_credits,
+    };
+  }
+
+  async dispatchDeepScan(maxPages = 15, includeSubdomains = false): Promise<DeepScanJob> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/audits/deep`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        max_pages: maxPages,
+        include_subdomains: includeSubdomains,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to dispatch deep scan (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      jobId: data.job_id,
+      status: data.status,
+      estimatedDurationSeconds: data.estimated_duration_seconds,
+      pagesTargeted: data.pages_targeted,
+      dashboardLiveUrl: data.dashboard_live_url,
+      pollingInstruction: data.polling_instruction,
+      remainingCredits: data.remaining_credits,
+    };
+  }
+
+  async checkJobStatus(jobId: string): Promise<JobStatusResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/jobs/${jobId}`, {
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to check job status (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      jobId: data.job_id,
+      status: data.status,
+      progressPercentage: data.progress_percentage,
+      pagesCrawled: data.pages_crawled,
+      pagesTargeted: data.pages_targeted,
+      glamdringScore: data.glamdring_score,
+      reportSummary: data.report_summary,
+    };
+  }
+
+  async listPrompts(limit = 25): Promise<PromptItem[]> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/prompts?limit=${limit}`, {
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to list prompts (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any[];
+    return data.map((p) => ({
+      id: p.id,
+      promptText: p.prompt_text,
+      intentCategory: p.intent_category,
+      trackedModels: p.tracked_models || [],
+      lastTestedAt: p.last_tested_at,
+      citationRatePercentage: p.citation_rate_percentage,
+    }));
+  }
+
+  async runPromptAudit(promptIds?: string[], customQuery?: string): Promise<PromptAuditResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/prompts/audit-run`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        prompt_ids: promptIds,
+        custom_query: customQuery,
+      }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to run prompt audit (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      testedQuery: data.tested_query,
+      citationsByModel: data.citations_by_model || {},
+      overallSentiment: data.overall_sentiment,
+      competitorsCited: data.competitors_cited || [],
+      remainingCredits: data.remaining_credits,
+    };
+  }
+
+  async generateRobotsConfig(framework = "nextjs_app_router"): Promise<RobotsResult> {
+    this.ensureApiKey();
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/robots/generate`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ framework }),
+      signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => "Unknown error");
+      throw new Error(`Failed to generate robots policy (${resp.status}): ${err}`);
+    }
+
+    const data = (await resp.json()) as any;
+    return {
+      framework: data.framework,
+      code: data.code,
     };
   }
 }

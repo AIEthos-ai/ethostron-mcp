@@ -1,6 +1,7 @@
 /**
  * EthosTron API Client
- * Connects the MCP Server to the AI Ethos backend diagnostic and remediation services.
+ * Zero-Knowledge Thin Client connecting the MCP Server to the AI Ethos backend.
+ * All scoring math, winning topologies, and prompt logic execute in Cloud Run.
  */
 export interface GeoQuickscanResult {
     domain: string;
@@ -26,20 +27,6 @@ export interface GeoQuickscanResult {
     criticalGaps: string[];
     claimUrl: string;
 }
-export interface QualityEvaluation {
-    overallQualityScore: number;
-    remediationAction: "add_foundational_block" | "improve_existing_answer" | "no_change_needed";
-    existingAnswerDetected: boolean;
-    factualRelevance: number;
-    brandAlignment: number;
-    queryAlignment: number;
-    extractabilityScore: number;
-    keywordStuffingRisk: number;
-    schemaSelectionAccuracy: number;
-    remediationRationale: string;
-    groundingStatus?: string;
-    groundedSignals?: string[];
-}
 export interface PreviewFixResult {
     topic: string;
     targetUrl: string;
@@ -52,7 +39,18 @@ export interface PreviewFixResult {
     extractedBrand?: string;
     vertical?: string;
     schemaSnippet?: string;
-    qualityEvaluation?: QualityEvaluation;
+    qualityEvaluation?: {
+        overallQualityScore: number;
+        remediationAction: string;
+        factualRelevance: number;
+        brandAlignment: number;
+        queryAlignment: number;
+        extractabilityScore: number;
+        keywordStuffingRisk: number;
+        schemaSelectionAccuracy: number;
+        remediationRationale: string;
+        groundingStatus?: string;
+    };
 }
 export interface CitationCheckResult {
     brandName: string;
@@ -69,29 +67,107 @@ export interface CitationCheckResult {
     measurementMethodology?: string;
     claimUrl: string;
 }
+export interface RemediationItem {
+    id: string;
+    title: string;
+    description: string;
+    priority: string;
+    status: string;
+    dueDate?: string | null;
+    dynamicPriorityScore: number;
+    remediationAction: string;
+    recommendedSchema: string;
+    targetPageUrl: string;
+}
+export interface RemediationFixResult {
+    remediationId: string;
+    title: string;
+    remediationAction: string;
+    targetPageUrl: string;
+    targetSelectorHint: string;
+    invertedPyramidCopy: {
+        text: string;
+        wordCount: number;
+        optimalRange: string;
+        extractabilityScore: number;
+    };
+    schemaMarkup: Record<string, unknown>;
+    dropInSnippets: Record<string, string>;
+    qualityMatrix: Record<string, unknown>;
+    remainingCredits: number;
+}
+export interface LintResult {
+    passed: boolean;
+    issues: Array<{
+        severity: string;
+        category: string;
+        message: string;
+        recommendation: string;
+    }>;
+    detectedLeadWordCount?: number;
+    hasJsonLd: boolean;
+    remainingCredits: number;
+}
+export interface GroundingResult {
+    groundingScore: number;
+    isGrounded: boolean;
+    verifiedSignals: string[];
+    unverifiedAssertions: string[];
+    remainingCredits: number;
+}
+export interface DeepScanJob {
+    jobId: string;
+    status: string;
+    estimatedDurationSeconds: number;
+    pagesTargeted: number;
+    dashboardLiveUrl: string;
+    pollingInstruction: string;
+    remainingCredits: number;
+}
+export interface JobStatusResult {
+    jobId: string;
+    status: string;
+    progressPercentage: number;
+    pagesCrawled: number;
+    pagesTargeted: number;
+    glamdringScore?: number;
+    reportSummary?: string;
+}
+export interface PromptItem {
+    id: string;
+    promptText: string;
+    intentCategory: string;
+    trackedModels: string[];
+    lastTestedAt?: string;
+    citationRatePercentage?: number;
+}
+export interface PromptAuditResult {
+    testedQuery: string;
+    citationsByModel: Record<string, any>;
+    overallSentiment: string;
+    competitorsCited: string[];
+    remainingCredits: number;
+}
+export interface RobotsResult {
+    framework: string;
+    code: string;
+}
 export declare class EthosTronClient {
     private backendUrl;
     private apiKey;
     constructor(backendUrl?: string, apiKey?: string);
     private getHeaders;
-    /**
-     * Performs a rapid Generative Engine Optimization audit for a URL.
-     */
+    private ensureApiKey;
     geoQuickscan(targetUrl: string, brandName?: string): Promise<GeoQuickscanResult>;
-    /**
-     * Generates a sample EthosTron Live direct-answer block for a topic.
-     */
     previewEthosTronFix(targetUrl: string, gapTopic: string, intentCategory?: string): Promise<PreviewFixResult>;
-    /**
-     * Checks frontier LLM citation share for a brand.
-     */
     checkLlmCitations(brandName: string, industryCategory?: string): Promise<CitationCheckResult>;
-    /**
-     * Offline heuristic quickscan when remote endpoint is not yet connected.
-     */
-    private generateHeuristicQuickscan;
-    /**
-     * Offline synthetic preview generator using EthosTron direct-answer principles.
-     */
-    private generateSyntheticPreviewFix;
+    listRemediations(priority?: string, limit?: number): Promise<RemediationItem[]>;
+    getRemediationFix(remediationId?: string, targetUrl?: string, topic?: string, framework?: string): Promise<RemediationFixResult>;
+    lintStagedContent(fileContent: string, filePath?: string): Promise<LintResult>;
+    verifyFactualGrounding(proposedText: string, targetUrl?: string): Promise<GroundingResult>;
+    dispatchDeepScan(maxPages?: number, includeSubdomains?: boolean): Promise<DeepScanJob>;
+    checkJobStatus(jobId: string): Promise<JobStatusResult>;
+    listPrompts(limit?: number): Promise<PromptItem[]>;
+    runPromptAudit(promptIds?: string[], customQuery?: string): Promise<PromptAuditResult>;
+    generateRobotsConfig(framework?: string): Promise<RobotsResult>;
 }

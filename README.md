@@ -26,12 +26,16 @@ Add to your project's `.vscode/mcp.json` (or run Command Palette `Ctrl+Shift+P` 
     "servers": {
       "ethostron": {
         "command": "npx",
-        "args": ["-y", "@aiethos/ethostron-mcp"]
+        "args": ["-y", "@aiethos/ethostron-mcp"],
+        "env": {
+          "AIETHOS_API_KEY": "ae_live_your_api_key_here"
+        }
       }
     }
   }
 }
 ```
+*(Note: `AIETHOS_API_KEY` is optional for free public quickscans, but required for the active in-IDE remediation suite).*
 **Copilot Chat Usage:**
 ```text
 @ethostron Audit https://example.com for GEO and identify missing schema types
@@ -80,7 +84,10 @@ For developers building with Google Gemini models or Google Antigravity:
   "mcpServers": {
     "ethostron": {
       "command": "npx",
-      "args": ["-y", "@aiethos/ethostron-mcp"]
+      "args": ["-y", "@aiethos/ethostron-mcp"],
+      "env": {
+        "AIETHOS_API_KEY": "ae_live_your_api_key_here"
+      }
     }
   }
 }
@@ -109,7 +116,10 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "ethostron": {
       "command": "npx",
-      "args": ["-y", "@aiethos/ethostron-mcp"]
+      "args": ["-y", "@aiethos/ethostron-mcp"],
+      "env": {
+        "AIETHOS_API_KEY": "ae_live_your_api_key_here"
+      }
     }
   }
 }
@@ -136,7 +146,10 @@ Or add directly to `.cursor/mcp.json` or `.windsurf/mcp.json`:
   "mcpServers": {
     "ethostron": {
       "command": "npx",
-      "args": ["-y", "@aiethos/ethostron-mcp"]
+      "args": ["-y", "@aiethos/ethostron-mcp"],
+      "env": {
+        "AIETHOS_API_KEY": "ae_live_your_api_key_here"
+      }
     }
   }
 }
@@ -152,7 +165,10 @@ Add to your extension's MCP configuration (e.g. `~/.cline/mcp_settings.json` or 
   "mcpServers": {
     "ethostron": {
       "command": "npx",
-      "args": ["-y", "@aiethos/ethostron-mcp"]
+      "args": ["-y", "@aiethos/ethostron-mcp"],
+      "env": {
+        "AIETHOS_API_KEY": "ae_live_your_api_key_here"
+      }
     }
   }
 }
@@ -232,6 +248,48 @@ Checks public prompt benchmarks to determine whether a brand is actively cited a
 // Example Agent Prompt:
 "Check AI citation share for Datadog in Cloud Observability using aiethos_check_llm_citations"
 ```
+
+---
+
+## ⚡ Active In-IDE Remediation Suite (Paid Subscribers)
+
+Subscribers with a claimed domain and an `AIETHOS_API_KEY` (`ae_live_...`) unlock active in-editor remediation tools that turn passive audits into instant drop-in code fixes:
+
+### 4. `aiethos_list_remediations`
+Lists active Generative Engine Optimization action items for your organization's claimed domain, ranked by dynamic priority score.
+- **Filters:** `priority`: `'all' | 'high' | 'medium' | 'low'`, `limit`: default `10`.
+- **Classification:** Categorizes gaps into `ADD_FOUNDATIONAL_BLOCK` (new Inverted-Pyramid lead) vs. `IMPROVE_EXISTING_ANSWER`.
+
+### 5. `aiethos_get_remediation_fix`
+Synthesizes a production-ready, verified remediation fix for a specific action item or page.
+- **Frameworks:** `nextjs_app_router`, `nextjs_pages_router`, `react`, `html_vanilla`.
+- **Returns:** Exact Inverted-Pyramid copy (45-65 words), validated Schema.org JSON-LD, target DOM selector hints, and drop-in JSX.
+- **Credit Cost:** 20 credits ($0.02).
+
+### 6. `aiethos_lint_staged_content`
+Pre-commit / in-editor GEO linter. Validates staged file content against the 45-65 word Inverted Pyramid standard, parses and validates JSON-LD schemas, and checks crawler directives.
+- **Credit Cost:** 5 credits ($0.005).
+
+### 7. `aiethos_verify_factual_grounding`
+The Hallucination Sentinel: Validates proposed content or feature descriptions against verified brand assertions to prevent hallucinated claims that could penalize citation authority.
+- **Credit Cost:** 10 credits ($0.01).
+
+### 8. `aiethos_deep_scan`
+Dispatches an asynchronous multi-page deep GEO audit across up to 25 core routes. Returns an immediate Job Ticket with estimated duration (~45s) to prevent IDE socket timeouts.
+- **Credit Cost:** 100 credits ($0.10).
+
+### 9. `aiethos_check_job_status`
+Polls the execution status of an asynchronous background job (`job_id`). Returns progress percentage, pages crawled, and the full Glamdring audit report when finished.
+
+### 10. `aiethos_list_prompts`
+Retrieves your organization's tracked GEO prompts from Prompt Studio, including query text, intent category, tracked models, and historical citation rates.
+
+### 11. `aiethos_run_prompt_audit`
+Triggers an on-demand multi-LLM citation audit across ChatGPT Search, Claude, Gemini, and Perplexity for an ad-hoc test query.
+- **Credit Cost:** 50 credits ($0.05).
+
+### 12. `aiethos_generate_robots_config`
+Generates an optimized Next.js `app/robots.ts` or static `public/robots.txt` ensuring that AI search crawlers (`GPTBot`, `PerplexityBot`, `ClaudeBot`, `Google-Extended`) have explicit indexation permissions.
 
 ---
 

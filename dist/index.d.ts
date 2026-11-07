@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * EthosTron MCP Server
+ * EthosTron Live MCP Server (v0.3.0)
  * Official Model Context Protocol Server for AI Ethos.
- * Enables AI agents to audit websites for GEO and synthesize direct-answer citations.
+ * Enables AI coding agents to perform in-IDE Generative Engine Optimization (GEO).
  */
 export {};
