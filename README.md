@@ -75,10 +75,20 @@ Audit https://stripe.com for GEO and generate a direct answer remediation block.
 
 ---
 
-### 3. Google Gemini & Antigravity
-For developers building with Google Gemini models or Google Antigravity:
+### 3. Google Antigravity & Gemini
+EthosTron Live is available as a native Antigravity Plugin and MCP server:
 
-**Option A — Antigravity & Gemini CLI (`.gemini/config/mcp_config.json`):**
+**Option A — Antigravity Agent Marketplace (One-Click Install):**
+Install directly from the Antigravity Agent Marketplace catalog:
+```markdown
+<plugin-card catalog-id="antigravity-plugins-partners/plugin/ethostron-live"></plugin-card>
+```
+Or link directly in your Antigravity plugins directory (`~/.gemini/config/plugins/ethostron-live/`):
+```bash
+git clone https://github.com/AIEthos-ai/ethostron-mcp ~/.gemini/config/plugins/ethostron-live
+```
+
+**Option B — Standalone MCP Server (`.gemini/config/mcp_config.json`):**
 ```json
 {
   "mcpServers": {
@@ -93,7 +103,7 @@ For developers building with Google Gemini models or Google Antigravity:
 }
 ```
 
-**Option B — Google GenAI Python SDK (`google-genai`):**
+**Option C — Google GenAI Python SDK (`google-genai`):**
 ```python
 from google import genai
 from google.genai import types

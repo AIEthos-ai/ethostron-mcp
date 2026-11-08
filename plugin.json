@@ -1,0 +1,21 @@
+{
+  "name": "ethostron-live",
+  "displayName": "EthosTron Live (GEO & AI Search Intelligence)",
+  "version": "0.3.0",
+  "description": "Enterprise Generative Engine Optimization (GEO) audits, crawler verification (GPTBot, Perplexity, Claude), and Schema.org direct-answer remediation for frontier AI answer engines.",
+  "author": {
+    "name": "AIEthos LLC",
+    "url": "https://aiethos.ai"
+  },
+  "homepage": "https://aiethos.ai/ethostron-live",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AIEthos-ai/ethostron-mcp"
+  },
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Run an EthosTron GEO quickscan on this domain's crawler and citation readiness",
+    "Synthesize a 45-65 word Inverted Pyramid direct answer and Schema.org block",
+    "Benchmark brand citation share across ChatGPT Search, Gemini, Claude, and Perplexity"
+  ]
+}

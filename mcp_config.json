@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ethostron": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@aiethos/ethostron-mcp@latest"
+      ],
+      "env": {
+        "AIETHOS_BACKEND_URL": "https://aiethos-backend-978593064341.us-west2.run.app"
+      }
+    }
+  }
+}
