@@ -140,6 +140,9 @@ export interface PromptItem {
     trackedModels: string[];
     lastTestedAt?: string;
     citationRatePercentage?: number;
+    domain?: string;
+    subscriptionCompany?: string;
+    subscriptionId?: string;
 }
 export interface PromptAuditResult {
     testedQuery: string;
@@ -147,6 +150,9 @@ export interface PromptAuditResult {
     overallSentiment: string;
     competitorsCited: string[];
     remainingCredits: number;
+    domain?: string;
+    subscriptionCompany?: string;
+    subscriptionId?: string;
 }
 export interface RobotsResult {
     framework: string;
@@ -167,7 +173,7 @@ export declare class EthosTronClient {
     verifyFactualGrounding(proposedText: string, targetUrl?: string): Promise<GroundingResult>;
     dispatchDeepScan(maxPages?: number, includeSubdomains?: boolean): Promise<DeepScanJob>;
     checkJobStatus(jobId: string): Promise<JobStatusResult>;
-    listPrompts(limit?: number): Promise<PromptItem[]>;
-    runPromptAudit(promptIds?: string[], customQuery?: string): Promise<PromptAuditResult>;
+    listPrompts(limit?: number, domain?: string, subscriptionId?: string): Promise<PromptItem[]>;
+    runPromptAudit(promptIds?: string[], customQuery?: string, domain?: string, subscriptionId?: string): Promise<PromptAuditResult>;
     generateRobotsConfig(framework?: string): Promise<RobotsResult>;
 }

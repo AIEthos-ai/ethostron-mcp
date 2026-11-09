@@ -152,6 +152,9 @@ export interface PromptItem {
   trackedModels: string[];
   lastTestedAt?: string;
   citationRatePercentage?: number;
+  domain?: string;
+  subscriptionCompany?: string;
+  subscriptionId?: string;
 }
 
 export interface PromptAuditResult {
@@ -160,6 +163,9 @@ export interface PromptAuditResult {
   overallSentiment: string;
   competitorsCited: string[];
   remainingCredits: number;
+  domain?: string;
+  subscriptionCompany?: string;
+  subscriptionId?: string;
 }
 
 export interface RobotsResult {
@@ -470,9 +476,13 @@ export class EthosTronClient {
     };
   }
 
-  async listPrompts(limit = 25): Promise<PromptItem[]> {
+  async listPrompts(limit = 25, domain?: string, subscriptionId?: string): Promise<PromptItem[]> {
     this.ensureApiKey();
-    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/prompts?limit=${limit}`, {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (domain) params.set("domain", domain);
+    if (subscriptionId) params.set("subscription_id", subscriptionId);
+
+    const resp = await fetch(`${this.backendUrl}/api/v1/mcp/prompts?${params.toString()}`, {
       headers: this.getHeaders(),
       signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
     });
@@ -490,10 +500,18 @@ export class EthosTronClient {
       trackedModels: p.tracked_models || [],
       lastTestedAt: p.last_tested_at,
       citationRatePercentage: p.citation_rate_percentage,
+      domain: p.domain,
+      subscriptionCompany: p.subscription_company,
+      subscriptionId: p.subscription_id,
     }));
   }
 
-  async runPromptAudit(promptIds?: string[], customQuery?: string): Promise<PromptAuditResult> {
+  async runPromptAudit(
+    promptIds?: string[],
+    customQuery?: string,
+    domain?: string,
+    subscriptionId?: string
+  ): Promise<PromptAuditResult> {
     this.ensureApiKey();
     const resp = await fetch(`${this.backendUrl}/api/v1/mcp/prompts/audit-run`, {
       method: "POST",
@@ -501,6 +519,8 @@ export class EthosTronClient {
       body: JSON.stringify({
         prompt_ids: promptIds,
         custom_query: customQuery,
+        domain: domain,
+        subscription_id: subscriptionId,
       }),
       signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
     });
@@ -517,6 +537,9 @@ export class EthosTronClient {
       overallSentiment: data.overall_sentiment,
       competitorsCited: data.competitors_cited || [],
       remainingCredits: data.remaining_credits,
+      domain: data.domain,
+      subscriptionCompany: data.subscription_company,
+      subscriptionId: data.subscription_id,
     };
   }
 

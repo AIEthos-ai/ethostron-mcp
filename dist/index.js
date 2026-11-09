@@ -215,7 +215,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "aiethos_list_prompts",
-                description: "[PAID TIER] Retrieves the organization's tracked GEO prompts from Prompt Studio, including query text, intent category, tracked models, and historical citation rate.",
+                description: "[PAID TIER] Retrieves the organization's tracked GEO prompts from Prompt Studio, including query text, intent category, tracked models, and historical citation rate. Automatically scopes to the primary AIEthos subscription unless an explicit domain or subscription_id is provided.",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -223,12 +223,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                             type: "integer",
                             default: 25,
                         },
+                        domain: {
+                            type: "string",
+                            description: "Optional domain filter (e.g., 'aiethos.ai', 'loganfamilyproperties.com'). Defaults to primary organization domain.",
+                        },
+                        subscription_id: {
+                            type: "string",
+                            description: "Optional subscription account UUID filter.",
+                        },
                     },
                 },
             },
             {
                 name: "aiethos_run_prompt_audit",
-                description: "[PAID TIER] Triggers an on-demand multi-LLM citation audit across ChatGPT Search, Claude, Gemini, and Perplexity for a test query. Returns citation presence, sentiment, and competitor citations. Deducts 50 credits ($0.05).",
+                description: "[PAID TIER] Triggers an on-demand multi-LLM citation audit across ChatGPT Search, Claude, Gemini, and Perplexity for a test query or Prompt Studio prompt set. Scoped strictly to the target subscription. Deducts 50 credits ($0.05).",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -240,6 +248,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                             type: "array",
                             items: { type: "string" },
                             description: "Optional list of Prompt Studio IDs to audit.",
+                        },
+                        domain: {
+                            type: "string",
+                            description: "Optional domain to target (e.g., 'aiethos.ai', 'loganfamilyproperties.com'). Defaults to primary organization domain.",
+                        },
+                        subscription_id: {
+                            type: "string",
+                            description: "Optional target subscription account UUID.",
                         },
                     },
                 },
@@ -403,7 +419,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
             case "aiethos_list_prompts": {
                 const limit = Number(args?.limit) || 25;
-                const prompts = await client.listPrompts(limit);
+                const domain = args?.domain?.trim();
+                const subscriptionId = args?.subscription_id?.trim();
+                const prompts = await client.listPrompts(limit, domain, subscriptionId);
+                const targetScope = prompts[0]?.subscriptionCompany
+                    ? `${prompts[0].subscriptionCompany} (${prompts[0].domain})`
+                    : (domain || "AIEthos LLC");
                 const list = prompts.map((p, idx) => (`**${idx + 1}. "${p.promptText}"**\n` +
                     `- Intent: \`${p.intentCategory}\` | Tracked Models: ${p.trackedModels.join(", ")}\n` +
                     `- Citation Rate: ${p.citationRatePercentage ?? 0}% | ID: \`${p.id}\``)).join("\n\n");
@@ -411,7 +432,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     content: [
                         {
                             type: "text",
-                            text: `## ✦ Prompt Studio Tracked Queries\n\n${list}`,
+                            text: `## ✦ Prompt Studio Tracked Queries\n*Target Subscription:* \`${targetScope}\`\n\n${list}`,
                         },
                     ],
                 };
@@ -419,19 +440,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             case "aiethos_run_prompt_audit": {
                 const promptIds = args?.prompt_ids;
                 const customQuery = args?.custom_query;
-                const audit = await client.runPromptAudit(promptIds, customQuery);
+                const domain = args?.domain?.trim();
+                const subscriptionId = args?.subscription_id?.trim();
+                const audit = await client.runPromptAudit(promptIds, customQuery, domain, subscriptionId);
+                const targetScope = audit.subscriptionCompany
+                    ? `${audit.subscriptionCompany} (${audit.domain})`
+                    : (domain || "AIEthos LLC");
                 const modelsBreakdown = Object.entries(audit.citationsByModel).map(([model, details]) => (`- **${model}:** ${details.status === "cited" ? "✅ Cited" : "⚠️ Not Cited"} — *${details.snippet}*`)).join("\n");
                 return {
                     content: [
                         {
                             type: "text",
                             text: (`## ✦ Multi-LLM Citation Audit Results\n` +
+                                `*Target Subscription:* \`${targetScope}\`\n` +
                                 `**Query Tested:** "${audit.testedQuery}"\n` +
                                 `**Overall Sentiment:** ${audit.overallSentiment}\n` +
                                 `**Remaining Credits:** ${audit.remainingCredits}\n\n` +
                                 `### Frontier Model Citations\n${modelsBreakdown}\n\n` +
                                 `### Competitors Cited in Same Answers\n` +
-                                audit.competitorsCited.map((c) => `- ${c}`).join("\n")),
+                                (audit.competitorsCited.length > 0
+                                    ? audit.competitorsCited.map((c) => `- ${c}`).join("\n")
+                                    : "*(None)*")),
                         },
                     ],
                 };
