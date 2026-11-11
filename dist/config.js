@@ -2,7 +2,7 @@
  * EthosTron MCP Server: Runtime Configuration
  */
 export const SERVER_NAME = "ethostron-mcp";
-export const SERVER_VERSION = "0.3.1";
+export const SERVER_VERSION = "0.3.2";
 export const CONFIG = {
     backendUrl: process.env.AIETHOS_BACKEND_URL || "https://aiethos-backend-978593064341.us-west2.run.app",
     apiKey: process.env.AIETHOS_API_KEY || "",

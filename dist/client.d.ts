@@ -120,6 +120,8 @@ export interface DeepScanJob {
     status: string;
     estimatedDurationSeconds: number;
     pagesTargeted: number;
+    planTier?: string;
+    planPageLimit?: number;
     dashboardLiveUrl: string;
     pollingInstruction: string;
     remainingCredits: number;

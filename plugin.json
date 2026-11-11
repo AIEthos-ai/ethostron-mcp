@@ -1,7 +1,7 @@
 {
   "name": "ethostron-live",
   "displayName": "EthosTron Live (GEO & AI Search Intelligence)",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Enterprise Generative Engine Optimization (GEO) audits, crawler verification (GPTBot, Perplexity, Claude), and Schema.org direct-answer remediation for frontier AI answer engines.",
   "author": {
     "name": "AIEthos LLC",

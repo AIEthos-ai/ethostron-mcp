@@ -285,8 +285,8 @@ The Hallucination Sentinel: Validates proposed content or feature descriptions a
 - **Credit Cost:** 10 credits ($0.01).
 
 ### 8. `aiethos_deep_scan`
-Dispatches an asynchronous multi-page deep GEO audit across up to 25 core routes. Returns an immediate Job Ticket with estimated duration (~45s) to prevent IDE socket timeouts.
-- **Credit Cost:** 100 credits ($0.10).
+Dispatches an asynchronous multi-page deep GEO audit powered by the unified `AuditOrchestrator` + Ethos-Glamdring pipeline. Automatically scales crawl depth to your subscription tier limit (`Pro: 25`, `Business: 50`, `Enterprise: 250` pages) unless capped lower via `max_pages`. Returns an immediate Job Ticket to prevent IDE socket timeouts.
+- **Credit Cost:** Flat 100 credits ($0.10).
 
 ### 9. `aiethos_check_job_status`
 Polls the execution status of an asynchronous background job (`job_id`). Returns progress percentage, pages crawled, and the full Glamdring audit report when finished.

@@ -56,6 +56,23 @@ describe("EthosTron MCP Tools (Zero-Knowledge Thin Client)", () => {
         });
       }
 
+      if (url.includes("/api/v1/mcp/audits/deep")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            job_id: "job_deep_test_1",
+            status: "processing",
+            estimated_duration_seconds: 90,
+            pages_targeted: 250,
+            plan_tier: "Enterprise Plan",
+            plan_page_limit: 250,
+            dashboard_live_url: "https://aiethos.ai/dashboard/audits",
+            polling_instruction: "Poll aiethos_check_job_status(job_id='job_deep_test_1')",
+            remaining_credits: 900,
+          }),
+        });
+      }
+
       if (url.includes("/api/v1/mcp/remediations")) {
         return Promise.resolve({
           ok: true,
@@ -126,5 +143,24 @@ describe("EthosTron MCP Tools (Zero-Knowledge Thin Client)", () => {
     expect(remediations).toHaveLength(1);
     expect(remediations[0].title).toBe("Expand Homepage Inverted Pyramid Lead");
     expect(remediations[0].dynamicPriorityScore).toBe(92);
+  });
+
+  it("should omit max_pages on dispatchDeepScan when not provided so backend resolves tier limits", async () => {
+    const job = await client.dispatchDeepScan(undefined, false);
+    expect(job.pagesTargeted).toBe(250);
+    expect(job.planTier).toBe("Enterprise Plan");
+    expect(job.planPageLimit).toBe(250);
+
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const lastCall = fetchMock.mock.calls.at(-1);
+    const body = JSON.parse(String(lastCall?.[1]?.body || "{}"));
+    expect(body).not.toHaveProperty("max_pages");
+    expect(body.include_subdomains).toBe(false);
+
+    await client.dispatchDeepScan(40, true);
+    const explicitCall = fetchMock.mock.calls.at(-1);
+    const explicitBody = JSON.parse(String(explicitCall?.[1]?.body || "{}"));
+    expect(explicitBody.max_pages).toBe(40);
+    expect(explicitBody.include_subdomains).toBe(true);
   });
 });

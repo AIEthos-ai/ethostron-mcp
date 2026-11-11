@@ -216,15 +216,18 @@ export class EthosTronClient {
             remainingCredits: data.remaining_credits,
         };
     }
-    async dispatchDeepScan(maxPages = 15, includeSubdomains = false) {
+    async dispatchDeepScan(maxPages, includeSubdomains = false) {
         this.ensureApiKey();
+        const bodyPayload = {
+            include_subdomains: includeSubdomains,
+        };
+        if (typeof maxPages === "number" && Number.isFinite(maxPages) && maxPages > 0) {
+            bodyPayload.max_pages = Math.floor(maxPages);
+        }
         const resp = await fetch(`${this.backendUrl}/api/v1/mcp/audits/deep`, {
             method: "POST",
             headers: this.getHeaders(),
-            body: JSON.stringify({
-                max_pages: maxPages,
-                include_subdomains: includeSubdomains,
-            }),
+            body: JSON.stringify(bodyPayload),
             signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
         });
         if (!resp.ok) {
@@ -237,6 +240,8 @@ export class EthosTronClient {
             status: data.status,
             estimatedDurationSeconds: data.estimated_duration_seconds,
             pagesTargeted: data.pages_targeted,
+            planTier: data.plan_tier,
+            planPageLimit: data.plan_page_limit,
             dashboardLiveUrl: data.dashboard_live_url,
             pollingInstruction: data.polling_instruction,
             remainingCredits: data.remaining_credits,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * EthosTron Live MCP Server (v0.3.1)
+ * EthosTron Live MCP Server (v0.3.2)
  * Official Model Context Protocol Server for AI Ethos.
  * Enables AI coding agents to perform in-IDE Generative Engine Optimization (GEO).
  */
@@ -207,14 +207,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "aiethos_deep_scan",
         description:
-          "[PAID TIER] Dispatches an asynchronous multi-page deep GEO audit across up to 25 core routes. Immediately returns a Job Ticket with estimated duration (~45s) to prevent IDE socket timeouts. Deducts 100 credits ($0.10).",
+          "[PAID TIER] Dispatches an asynchronous multi-page deep GEO audit powered by EthosTron + Glamdring. Automatically scales crawl depth to your subscription plan limit (Pro: 25, Business: 50, Enterprise: 250 pages) unless capped lower via max_pages. Deducts a flat 100 credits ($0.10).",
         inputSchema: {
           type: "object",
           properties: {
             max_pages: {
               type: "integer",
-              default: 15,
-              description: "Number of internal routes to crawl and analyze.",
+              description:
+                "Optional upper cap on internal routes to crawl and analyze. When omitted, defaults to your subscription plan tier limit (Pro: 25, Business: 50, Enterprise: 250).",
             },
             include_subdomains: {
               type: "boolean",
@@ -438,10 +438,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "aiethos_deep_scan": {
-        const maxPages = Number(args?.max_pages) || 15;
+        const parsedMaxPages =
+          typeof args?.max_pages === "number"
+            ? args.max_pages
+            : typeof args?.max_pages === "string" && args.max_pages.trim() !== ""
+              ? Number(args.max_pages)
+              : undefined;
+        const maxPages =
+          parsedMaxPages !== undefined && Number.isFinite(parsedMaxPages) && parsedMaxPages > 0
+            ? Math.floor(parsedMaxPages)
+            : undefined;
         const includeSubdomains = Boolean(args?.include_subdomains);
 
         const ticket = await client.dispatchDeepScan(maxPages, includeSubdomains);
+        const tierNote = ticket.planTier
+          ? ` (${ticket.planTier} cap: ${ticket.planPageLimit ?? ticket.pagesTargeted})`
+          : "";
 
         return {
           content: [
@@ -451,7 +463,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 `## ✦ Deep Multi-Page GEO Scan Dispatched\n` +
                 `- **Job ID:** \`${ticket.jobId}\`\n` +
                 `- **Status:** Processing in background (Estimated: ~${ticket.estimatedDurationSeconds}s)\n` +
-                `- **Pages Targeted:** ${ticket.pagesTargeted}\n` +
+                `- **Pages Targeted:** ${ticket.pagesTargeted}${tierNote}\n` +
                 `- **Live Dashboard:** [View Progress & Report](${ticket.dashboardLiveUrl})\n` +
                 `- **Remaining Credits:** ${ticket.remainingCredits}\n\n` +
                 `*Polling Instruction:* Check progress anytime without blocking by calling:\n` +
